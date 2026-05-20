@@ -17,3 +17,8 @@ pub fn list_files(dir: &PathBuf, recursive: bool) -> std::io::Result<Vec<PathBuf
 
     Ok(files)
 }
+
+pub fn read_file(file: &PathBuf) -> std::io::Result<String> {
+    let contents = fs::read_to_string(file)?;
+    Ok(contents)
+}
