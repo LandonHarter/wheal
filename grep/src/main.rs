@@ -39,7 +39,12 @@ fn main() -> std::io::Result<()> {
         
         for line in matches {
             let parts: Vec<&str> = line.split(&pattern).collect();
-            println!("{}: {}{}{}", file.display(), parts[0], pattern.red(), parts[1]);
+
+            print!("{}: ", file.display());
+            for part_index in 0..parts.len() {
+                print!("{}{}", parts[part_index], if part_index < parts.len() - 1 { pattern.red() } else { "".red() });
+            }
+            println!();
         }
     }
 
