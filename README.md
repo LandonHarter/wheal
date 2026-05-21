@@ -7,6 +7,7 @@ Essentially reinventing popular tools/programs as an exercise for learning new l
 - Go
 - Zig
 - OCaml
+- Assembly
 
 This repository is just going to be a hodge-podge of a bunch of languages and a bunch of tools without any direction.
 Like I said, more of a learning exercise than anything else.

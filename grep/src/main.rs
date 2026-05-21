@@ -1,6 +1,7 @@
-use std::env;
+use std::{env};
 
 use clap::Parser;
+use colored::Colorize;
 
 mod files;
 mod matcher;
@@ -22,7 +23,10 @@ struct Args {
 fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let mut cwd = env::current_dir()?;
-    cwd.push(args.file);
+    if  args.file != "*" {
+        cwd.push(args.file);
+    }
+
     let searchable_files = files::list_files(&cwd.to_path_buf(), args.recursive).unwrap();
 
     let mut pattern = args.pattern;
@@ -30,14 +34,13 @@ fn main() -> std::io::Result<()> {
         pattern = pattern.to_lowercase();
     }
 
-    let mut all_matches = vec![];
     for file in searchable_files {
-        let mut matches = matcher::find_matches(file, &pattern);
-        all_matches.append(&mut matches);
-    }
-
-    for mat in all_matches {
-        println!("{}: {}", mat.file.display(), mat.content);
+        let matches = matcher::find_matches(&file, &pattern);
+        
+        for line in matches {
+            let parts: Vec<&str> = line.split(&pattern).collect();
+            println!("{}: {}{}{}", file.display(), parts[0], pattern.red(), parts[1]);
+        }
     }
 
     Ok(())

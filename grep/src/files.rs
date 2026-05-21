@@ -1,24 +1,23 @@
-use std::{fs, path::PathBuf};
+use std::{fs::{self},path::PathBuf};
 
 pub fn list_files(dir: &PathBuf, recursive: bool) -> std::io::Result<Vec<PathBuf>> {
-    let paths = fs::read_dir(dir).unwrap();
     let mut files = vec![];
-    
-    for path in paths {
-        let buf = path.unwrap().path();
-        
-        if recursive && buf.is_dir() {
-            let mut sub_files = list_files(&buf, true).unwrap();
-            files.append(&mut sub_files);
-        } else if !buf.is_dir() {
-            files.push(buf);
+
+    if dir.is_dir() {
+        let paths = fs::read_dir(dir).unwrap();
+        for path in paths {
+            let buf = path.unwrap().path();
+         
+            if recursive && buf.is_dir() {
+                let mut sub_files = list_files(&buf, true).unwrap();
+                files.append(&mut sub_files);
+            } else if !buf.is_dir() {
+                files.push(buf);
+            }
         }
+    } else {
+        files.push(dir.clone());
     }
 
     Ok(files)
-}
-
-pub fn read_file(file: &PathBuf) -> std::io::Result<String> {
-    let contents = fs::read_to_string(file)?;
-    Ok(contents)
 }
