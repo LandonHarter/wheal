@@ -1,13 +1,20 @@
 const std = @import("std");
 const gl = @import("zgl");
 
+const file = @import("../util/file.zig");
+
 pub const Shader = struct {
     const Self = @This();
 
     program: gl.Program,
     uniformLocations: std.StringHashMap(u32),
 
-    pub fn load(vertexContent: []const u8, fragmentContent: []const u8) Shader {
+    pub fn load(vertexPath: []const u8, fragmentPath: []const u8, io: std.Io, gpa: std.mem.Allocator) !Shader {
+        const vertexContent = try file.read(vertexPath, io, gpa);
+        defer gpa.free(vertexContent);
+        const fragmentContent = try file.read(fragmentPath, io, gpa);
+        defer gpa.free(fragmentContent);
+
         const vertexShader = gl.createShader(.vertex);
         defer vertexShader.delete();
         vertexShader.source(1, &[_][]const u8{vertexContent});
@@ -25,7 +32,7 @@ pub const Shader = struct {
 
         return Shader {
             .program = program,
-            .uniformLocations = .init(std.heap.page_allocator)
+            .uniformLocations = .init(gpa)
         };
     }
 

@@ -6,10 +6,12 @@ const voxel = @import("voxel");
 const glfw = @import("zglfw");
 const gl = @import("zgl");
 
-const file = @import("engine/util/file.zig");
-
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
+
+    var da: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = da.deinit();
+    const gpa = da.allocator();
 
     try glfw.init();
     defer glfw.terminate();
@@ -26,16 +28,14 @@ pub fn main(init: std.process.Init) !void {
     glfw.swapInterval(1);
     gl.loadExtensions({}, getProcAddress) catch {}; // macOS caps at GL 4.1; 4.3+ entry points are absent
 
-    const vertexContent = file.read("resources/shaders/vert.glsl");
-    const fragmentContent = file.read("resources/shaders/frag.glsl");
-    const shader = voxel.Shader.load(vertexContent, fragmentContent);
+    const shader = try voxel.Shader.load("resources/shaders/vert.glsl", "resources/shaders/frag.glsl", io, gpa);
 
     const vertices = [3]voxel.Vertex{
         .{ .pos=.{ .x=0.5, .y=-0.5, .z=0 } },
         .{ .pos=.{ .x=-0.5, .y=-0.5, .z=0 } },
         .{ .pos=.{ .x=0, .y=0.5, .z=0 } }
     };
-    const mesh = try voxel.Mesh.create(std.heap.page_allocator, &vertices);
+    const mesh = try voxel.Mesh.create(gpa, &vertices);
     defer mesh.destroy();
 
     var meshTransform = voxel.Transform{};
@@ -48,21 +48,13 @@ pub fn main(init: std.process.Init) !void {
 
         shader.bind();
 
-        const modelArr = try std.heap.page_allocator.alloc([4][4]f32, 1);
-        defer std.heap.page_allocator.free(modelArr);
-        modelArr[0] = meshTransform.model().data;
+        const modelArr = [1][4][4]f32{meshTransform.model().data};
+        const viewArr = [1][4][4]f32{camera.view().data};
+        const projArr = [1][4][4]f32{camera.projection().data};
 
-        const viewArr = try std.heap.page_allocator.alloc([4][4]f32, 1);
-        defer std.heap.page_allocator.free(viewArr);
-        viewArr[0] = camera.view().data;
-
-        const projArr = try std.heap.page_allocator.alloc([4][4]f32, 1);
-        defer std.heap.page_allocator.free(projArr);
-        projArr[0] = camera.projection().data;
-
-        shader.program.uniformMatrix4(shader.uniloc("model"), false, modelArr);
-        shader.program.uniformMatrix4(shader.uniloc("view"), false, viewArr);
-        shader.program.uniformMatrix4(shader.uniloc("projection"), false, projArr);
+        shader.program.uniformMatrix4(shader.uniloc("model"), false, &modelArr);
+        shader.program.uniformMatrix4(shader.uniloc("view"), false, &viewArr);
+        shader.program.uniformMatrix4(shader.uniloc("projection"), false, &projArr);
         mesh.vao.bind();
         gl.drawArrays(.triangles, 0, mesh.count);
 
