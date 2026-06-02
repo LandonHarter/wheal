@@ -100,7 +100,7 @@ pub const Chunk = struct {
             while (y < self.blocks[x].len) : (y += 1) {
                 var z: u8 = 0;
                 while (z < self.blocks[x][y].len) : (z += 1) {
-                    self.blocks[x][y][z].type = @intFromEnum(if (y > 32) block.Blocks.AIR else block.Blocks.DIRT);
+                    self.blocks[x][y][z].type = @intFromEnum(if (y > 32) block.Blocks.AIR else block.Blocks.GRASS);
                     if (self.blocks[x][y][z].type != @intFromEnum(block.Blocks.AIR)) {
                         try self.addToChunk(Vec3{ .x = @floatFromInt(x), .y = @floatFromInt(y), .z = @floatFromInt(z) }, self.blocks[x][y][z], allocator);
                     }
@@ -117,7 +117,7 @@ pub const Chunk = struct {
             tempPos = tempPos.add(constants.FACE_CHECKS[i]);
 
             if (!self.checkVoxel(tempPos)) {
-                const tile_uv = computeTileUv(voxel.type);
+                const tile_uv = computeTileUv(voxel.type, i);
                 try self.vertices.appendSlice(allocator, &[4]mesh.Vertex {
                     mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][0]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v1 } },
                     mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][1]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v0 } },
@@ -140,9 +140,9 @@ pub const Chunk = struct {
 
     const TileUv = struct { u0: f32, v0: f32, u1: f32, v1: f32 };
 
-    fn computeTileUv(block_type: u8) TileUv {
+    fn computeTileUv(block_type: u8, face: u8) TileUv {
         const n: f32 = @floatFromInt(constants.TEXTURE_ATLAS_SIZE);
-        const tile: u32 = block_type;
+        const tile: u16 = constants.BLOCK_TYPES[block_type].textures[face];
         const col: f32 = @floatFromInt(tile % constants.TEXTURE_ATLAS_SIZE);
         const row: f32 = @floatFromInt(tile / constants.TEXTURE_ATLAS_SIZE);
         return .{

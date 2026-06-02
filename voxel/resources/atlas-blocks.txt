@@ -1,1 +1,6 @@
 dirt
+grass_block_side
+grass_block_top
+cobblestone
+stone
+bedrock
