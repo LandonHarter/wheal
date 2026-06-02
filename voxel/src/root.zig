@@ -14,3 +14,6 @@ pub const Transform = @import("engine/math/transform.zig").Transform;
 // Math
 pub const Vec3 = @import("engine/math/vec.zig").Vec3;
 pub const Mat4 = @import("engine/math/mat.zig").Mat4;
+
+// Game
+pub const World = @import("voxel/world.zig");

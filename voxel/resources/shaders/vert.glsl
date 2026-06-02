@@ -10,6 +10,6 @@ uniform mat4 projection;
 
 void main() {
     vertex_position = (model * vec4(vertexPosition, 1.0f)).xyz;
-    gl_Position = model * view * projection * vec4(vertexPosition, 1.0f);
+    gl_Position = projection * view * model * vec4(vertexPosition, 1.0f);
 }
 

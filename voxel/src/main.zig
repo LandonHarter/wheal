@@ -28,41 +28,22 @@ pub fn main(init: std.process.Init) !void {
     glfw.swapInterval(1);
     gl.loadExtensions({}, getProcAddress) catch {}; // macOS caps at GL 4.1; 4.3+ entry points are absent
 
-    const shader = try voxel.Shader.load("resources/shaders/vert.glsl", "resources/shaders/frag.glsl", io, gpa);
+    gl.enable(.depth_test);
 
-    const vertices = [3]voxel.Vertex{
-        .{ .pos=.{ .x=0.5, .y=-0.5, .z=0 } },
-        .{ .pos=.{ .x=-0.5, .y=-0.5, .z=0 } },
-        .{ .pos=.{ .x=0, .y=0.5, .z=0 } }
-    };
-    const mesh = try voxel.Mesh.create(gpa, &vertices);
-    defer mesh.destroy();
-
-    var meshTransform = voxel.Transform{};
-    var camera = voxel.Camera{};
-    camera.transform.pos.z = 5;
+    try voxel.World.create(gpa, io);
+    defer voxel.World.destroy(gpa);
+    try voxel.World.generate(gpa);
 
     while (!window.shouldClose()) {
         voxel.Time.startFrame(io);
-        gl.clear(.{ .color = true });
+        gl.clearColor(0.53, 0.81, 0.92, 1.0);
+        gl.clear(.{ .color = true, .depth = true });
 
-        shader.bind();
-
-        const modelArr = [1][4][4]f32{meshTransform.model().data};
-        const viewArr = [1][4][4]f32{camera.view().data};
-        const projArr = [1][4][4]f32{camera.projection().data};
-
-        shader.program.uniformMatrix4(shader.uniloc("model"), false, &modelArr);
-        shader.program.uniformMatrix4(shader.uniloc("view"), false, &viewArr);
-        shader.program.uniformMatrix4(shader.uniloc("projection"), false, &projArr);
-        mesh.vao.bind();
-        gl.drawArrays(.triangles, 0, mesh.count);
+        voxel.World.update();
 
         window.swapBuffers();
         glfw.pollEvents();
         voxel.Time.endFrame(io);
-
-        meshTransform.pos.z -= @floatCast(voxel.Time.delta);
     }
 }
 
