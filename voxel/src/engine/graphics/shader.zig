@@ -5,7 +5,7 @@ pub const Shader = struct {
     const Self = @This();
 
     program: gl.Program,
-    uniformLocations: std.AutoHashMap([]const u8, u32),
+    uniformLocations: std.StringHashMap(u32),
 
     pub fn load(vertexContent: []const u8, fragmentContent: []const u8) Shader {
         const vertexShader = gl.createShader(.vertex);
@@ -33,14 +33,7 @@ pub const Shader = struct {
         self.program.use();
     }
 
-    pub fn uniloc(self: Self, name: []const u8) ?u32 {
-        if (self.uniformLocations.contains(name)) {
-            return self.uniformLocations.get(name);
-        }
-        const loc = self.program.uniformLocation(name);
-        if (loc) {
-            self.uniformLocations.put(name, loc);
-        }
-        return loc;
+    pub fn uniloc(self: Self, name: [:0]const u8) ?u32 {
+        return self.program.uniformLocation(name);
     }
 };

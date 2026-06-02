@@ -6,7 +6,9 @@ pub const Mesh = mesh.Mesh;
 pub const Vertex = mesh.Vertex;
 
 // Engine
-pub const Camera = @import("engine/camera.zig");
+pub const Time = @import("engine/core/time.zig");
+
+pub const Camera = @import("engine/camera.zig").Camera;
 pub const Transform = @import("engine/math/transform.zig").Transform;
 
 // Math

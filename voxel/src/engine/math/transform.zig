@@ -9,7 +9,7 @@ pub const Transform = struct {
     scale: Vec3 = Vec3{},
 
     pub fn model(self: Self) Mat4 {
-        const mat = Mat4{};
+        var mat = Mat4{};
         mat.translate(self.pos);
         return mat;
     }
