@@ -5,6 +5,10 @@ const mesh = @import("engine/graphics/mesh.zig");
 pub const Mesh = mesh.Mesh;
 pub const Vertex = mesh.Vertex;
 
+const atlas = @import("engine/graphics/atlas.zig");
+pub const Atlas = atlas;
+pub const AtlasResult = atlas.AtlasResult;
+
 // Engine
 pub const Time = @import("engine/core/time.zig");
 

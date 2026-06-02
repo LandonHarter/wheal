@@ -35,8 +35,15 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("zgl", zgl.module("zgl"));
 
+    const zigimg = b.dependency("zigimg", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("zigimg", zigimg.module("zigimg"));
+
     mod.addImport("zgl", zgl.module("zgl"));
     mod.addImport("zglfw", zglfw.module("root"));
+    mod.addImport("zigimg", zigimg.module("zigimg"));
 
     b.installArtifact(exe);
 

@@ -1,8 +1,10 @@
 const std = @import("std");
+const gl = @import("zgl");
 const chunk = @import("chunking/chunk.zig");
 const Player = @import("player/player.zig").Player;
 const Vec3 = @import("../engine/math/vec.zig").Vec3;
 const Shader = @import("../engine/graphics/shader.zig").Shader;
+const atlas_mod = @import("../engine/graphics/atlas.zig");
 const constants = @import("constants.zig");
 
 const WORLD_SIZE = 5;
@@ -11,10 +13,14 @@ var chunks: std.hash_map.AutoHashMap(chunk.ChunkCoord, chunk.Chunk) = undefined;
 pub var player: Player = Player{};
 
 var shader: Shader = undefined;
+var atlas: atlas_mod.AtlasResult = undefined;
 
 pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
     chunks = .init(gpa);
     shader = try Shader.load("resources/shaders/vert.glsl", "resources/shaders/frag.glsl", io, gpa);
+
+    atlas = try atlas_mod.build(gpa, io, "resources/default.zip", "resources/atlas-blocks.txt");
+    gl.programUniform1i(shader.program, shader.uniloc("atlas"), 0);
 
     player.camera.transform.pos.y = 35;
     player.camera.transform.pos.z = 10;
@@ -37,6 +43,9 @@ pub fn generate(allocator: std.mem.Allocator) !void {
 }
 
 pub fn update() void {
+    gl.activeTexture(.texture_0);
+    gl.bindTexture(atlas.texture, .@"2d");
+
     var it = chunks.valueIterator();
     while (it.next()) |chunk_ptr| {
         try chunk_ptr.*.update(shader);

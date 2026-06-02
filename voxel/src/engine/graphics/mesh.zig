@@ -1,13 +1,17 @@
 const std = @import("std");
 const gl = @import("zgl");
 
-const Vec3 = @import("../math/vec.zig").Vec3;
+const vec = @import("../math/vec.zig");
+const Vec3 = vec.Vec3;
+const Vec2 = vec.Vec2;
+
 const Transform = @import("../math/transform.zig").Transform;
 const Shader = @import("shader.zig").Shader;
 const Camera = @import("../camera.zig").Camera;
 
 pub const Vertex = struct {
     pos: Vec3 = Vec3{},
+    uv: Vec2 = Vec2{},
 };
 
 pub const Mesh = struct {
@@ -21,12 +25,19 @@ pub const Mesh = struct {
     transform: Transform = Transform{},
 
     pub fn create(allocator: std.mem.Allocator, vertices: []const Vertex, indices: []const u32) !Mesh {
-        const buffer = try allocator.alloc(f32, vertices.len * 3);
-        defer allocator.free(buffer);
+        const vertexBuffer = try allocator.alloc(f32, vertices.len * 3);
+        defer allocator.free(vertexBuffer);
         for (vertices, 0..) |vertex, index| {
-            buffer[index * 3] = vertex.pos.x;
-            buffer[index * 3 + 1] = vertex.pos.y;
-            buffer[index * 3 + 2] = vertex.pos.z;
+            vertexBuffer[index * 3] = vertex.pos.x;
+            vertexBuffer[index * 3 + 1] = vertex.pos.y;
+            vertexBuffer[index * 3 + 2] = vertex.pos.z;
+        }
+
+        const uvBuffer = try allocator.alloc(f32, vertices.len * 2);
+        defer allocator.free(uvBuffer);
+        for (vertices, 0..) |vertex, index| {
+            uvBuffer[index * 2] = vertex.uv.x;
+            uvBuffer[index * 2 + 1] = vertex.uv.y;
         }
 
         const vao = gl.genVertexArray();
@@ -34,7 +45,7 @@ pub const Mesh = struct {
 
         const vbo = gl.genBuffer();
         vbo.bind(gl.BufferTarget.array_buffer);
-        gl.bufferData(gl.BufferTarget.array_buffer, f32, buffer, gl.BufferUsage.static_draw);
+        gl.bufferData(gl.BufferTarget.array_buffer, f32, vertexBuffer, gl.BufferUsage.static_draw);
 
         gl.vertexAttribPointer(0, 3, gl.Type.float, false, 3 * @sizeOf(f32), 0);
         gl.enableVertexAttribArray(0);
@@ -44,6 +55,13 @@ pub const Mesh = struct {
         gl.bufferData(gl.BufferTarget.element_array_buffer, u32, indices, gl.BufferUsage.static_draw);
 
         gl.bindBuffer(@enumFromInt(0), gl.BufferTarget.array_buffer);
+
+        const ubo = gl.genBuffer();
+        ubo.bind(gl.BufferTarget.array_buffer);
+        gl.bufferData(gl.BufferTarget.array_buffer, f32, uvBuffer, gl.BufferUsage.static_draw);
+
+        gl.vertexAttribPointer(1, 2, gl.Type.float, false, 2 * @sizeOf(f32), 0);
+        gl.enableVertexAttribArray(1);
 
         return Mesh{
             .vao = vao,

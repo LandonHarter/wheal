@@ -12,6 +12,10 @@
             .url = "https://github.com/zig-gamedev/zglfw/archive/51003c105d23db378bb59ce415a387b22f1b0892.tar.gz",
             .hash = "zglfw-0.10.0-dev-zgVDNIy4IQDJNRy4jrP1As-SZxfJpuWhU1iJ-wBab_VD",
         },
+        .zigimg = .{
+            .url = "https://github.com/zigimg/zigimg/archive/0dd86499cccdbf798330e184d02d5efac7e5b50b.tar.gz",
+            .hash = "zigimg-0.1.0-8_eo2uelFwC9-IbogKwVT_ze4KqosOEqa5O03ZXIa2UZ",
+        },
     },
     .paths = .{
         "build.zig",

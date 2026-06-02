@@ -1,7 +1,9 @@
 const std = @import("std");
 const mesh = @import("../../engine/graphics/mesh.zig");
 const constants = @import("../constants.zig");
-const Vec3 = @import("../../engine/math/vec.zig").Vec3;
+const vec = @import("../../engine/math/vec.zig");
+const Vec3 = vec.Vec3;
+const Vec2 = vec.Vec2;
 const Shader = @import("../../engine/graphics/shader.zig").Shader;
 
 const block = @import("../blocks/block.zig");
@@ -115,11 +117,12 @@ pub const Chunk = struct {
             tempPos = tempPos.add(constants.FACE_CHECKS[i]);
 
             if (!self.checkVoxel(tempPos)) {
+                const tile_uv = computeTileUv(voxel.type);
                 try self.vertices.appendSlice(allocator, &[4]mesh.Vertex {
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][0]]) },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][1]]) },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][2]]) },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][3]]) },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][0]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v1 } },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][1]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v0 } },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][2]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v1 } },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][3]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v0 } },
                 });
                 try self.indices.appendSlice(allocator, &[6]u32 {
                     self.vertexIndex,
@@ -133,8 +136,21 @@ pub const Chunk = struct {
                 self.vertexIndex += 4;
             }
         }
+    }
 
-        _ = voxel;
+    const TileUv = struct { u0: f32, v0: f32, u1: f32, v1: f32 };
+
+    fn computeTileUv(block_type: u8) TileUv {
+        const n: f32 = @floatFromInt(constants.TEXTURE_ATLAS_SIZE);
+        const tile: u32 = block_type;
+        const col: f32 = @floatFromInt(tile % constants.TEXTURE_ATLAS_SIZE);
+        const row: f32 = @floatFromInt(tile / constants.TEXTURE_ATLAS_SIZE);
+        return .{
+            .u0 = col / n,
+            .v0 = row / n,
+            .u1 = (col + 1) / n,
+            .v1 = (row + 1) / n,
+        };
     }
 
     fn createMeshData(self: *Self, allocator: std.mem.Allocator) !void {

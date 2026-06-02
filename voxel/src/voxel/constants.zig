@@ -3,6 +3,8 @@ const Vec3 = @import("../engine/math/vec.zig").Vec3;
 pub const CHUNK_WIDTH = 16;
 pub const CHUNK_HEIGHT = 128;
 
+pub const TEXTURE_ATLAS_SIZE = 32;
+
 pub const BLOCK_VERTICES: [8]Vec3 = .{
     Vec3{ .x = 0, .y = 0, .z = 0 },
     Vec3{ .x = 1, .y = 0, .z = 0 },
