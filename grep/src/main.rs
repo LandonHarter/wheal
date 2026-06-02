@@ -45,6 +45,7 @@ fn main() -> std::io::Result<()> {
                 print!("{}{}", parts[part_index], if part_index < parts.len() - 1 { pattern.red() } else { "".red() });
             }
             println!();
+            println!();
         }
     }
 

@@ -1,0 +1,21 @@
+.{
+    .name = .voxel,
+    .version = "0.0.0",
+    .fingerprint = 0xd5998e5e5466517e, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zgl = .{
+            .url = "https://github.com/ziglibs/zgl/archive/a73479a8036ebf806759f8dd7e6d60abc631da1d.tar.gz",
+            .hash = "zgl-1.1.0-p_NpAD9FCgAY_XDO_EXxSGJ5-n9b3deO0V-9z9HJKYTQ",
+        },
+        .zglfw = .{
+            .url = "https://github.com/zig-gamedev/zglfw/archive/51003c105d23db378bb59ce415a387b22f1b0892.tar.gz",
+            .hash = "zglfw-0.10.0-dev-zgVDNIy4IQDJNRy4jrP1As-SZxfJpuWhU1iJ-wBab_VD",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
