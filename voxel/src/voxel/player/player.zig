@@ -1,6 +1,8 @@
 const Camera = @import("../../engine/camera.zig").Camera;
 const Vec3 = @import("../../engine/math/vec.zig").Vec3;
+const ChunkCoord = @import("../chunking/chunk.zig").ChunkCoord;
 const Input = @import("../../engine/core/input.zig");
+const constants = @import("../constants.zig");
 const glfw = @import("zglfw");
 
 pub const Player = struct {
@@ -9,6 +11,8 @@ pub const Player = struct {
     camera: Camera = Camera{},
     move_speed: f32 = 10.0,
     mouse_sensitivity: f32 = 0.002,
+
+    lastChunkCoord: ChunkCoord = ChunkCoord{.x=0,.z=0},
 
     pub fn update(self: *Self, delta: f32) void {
         self.camera.transform.rot.y -= Input.mouseDx() * self.mouse_sensitivity;
@@ -49,4 +53,12 @@ pub const Player = struct {
         self.camera.transform.pos.y += dy * step;
         self.camera.transform.pos.z += dz * step;
     }
+
+    pub fn getChunkCoord(self: Self) ChunkCoord {
+        return ChunkCoord {
+            .x = @floor(self.camera.transform.pos.x / constants.CHUNK_WIDTH),
+            .z = @floor(self.camera.transform.pos.z / constants.CHUNK_WIDTH)
+        };
+    }
+
 };

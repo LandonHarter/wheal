@@ -4,6 +4,8 @@ const BlockType = @import("blocks/block-type.zig").BlockType;
 pub const CHUNK_WIDTH = 16;
 pub const CHUNK_HEIGHT = 128;
 
+pub const VIEW_DISTANCE = 4;
+
 pub const TEXTURE_ATLAS_SIZE = 32;
 
 pub const BLOCK_VERTICES: [8]Vec3 = .{

@@ -11,7 +11,7 @@ pub const AtlasResult = atlas.AtlasResult;
 
 // Engine
 pub const Time = @import("engine/core/time.zig");
-pub const Profiler = @import("engine/performance.zig").Profiler;
+pub const Profiler = @import("engine/performance.zig");
 pub const Input = @import("engine/core/input.zig");
 
 pub const Camera = @import("engine/camera.zig").Camera;

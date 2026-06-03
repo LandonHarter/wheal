@@ -5,13 +5,20 @@ const vec = @import("../../engine/math/vec.zig");
 const Vec3 = vec.Vec3;
 const Vec2 = vec.Vec2;
 const Shader = @import("../../engine/graphics/shader.zig").Shader;
+const Profiler = @import("../../engine/performance.zig");
 
 const block = @import("../blocks/block.zig");
 const World = @import("../world.zig");
 
 pub const ChunkCoord = struct {
+    const Self = @This();
+
     x: i32,
-    z: i32
+    z: i32,
+
+    pub fn equals(self: Self, other: ChunkCoord) bool {
+        return self.x == other.x and self.z == other.z;
+    } 
 };
 
 pub const Chunk = struct {
@@ -19,6 +26,7 @@ pub const Chunk = struct {
 
     coord: ChunkCoord,
     neighbors: [4]ChunkCoord,
+    neighbor_ptrs: [4]?*Chunk,
 
     mesh: mesh.Mesh,
     blocks: [constants.CHUNK_WIDTH][constants.CHUNK_HEIGHT][constants.CHUNK_WIDTH]block.Block,
@@ -27,6 +35,9 @@ pub const Chunk = struct {
     indices: std.ArrayList(u32),
 
     vertexIndex: u32 = 0,
+
+    active: bool = true,
+    generated: bool = false,
 
     pub fn create(coord: ChunkCoord) Chunk {
         return Chunk {
@@ -37,6 +48,7 @@ pub const Chunk = struct {
                 ChunkCoord{ .x=coord.x, .z=coord.z-1 },
                 ChunkCoord{ .x=coord.x, .z=coord.z+1 }
             },
+            .neighbor_ptrs = .{ null, null, null, null },
             .blocks = @splat(@splat(@splat(block.Block{ .type = 0 }))),
             .mesh = undefined,
             .vertices = .empty,
@@ -45,6 +57,7 @@ pub const Chunk = struct {
     }
 
     pub fn update(self: Self, shader: Shader) !void {
+        if (!self.active or !self.generated) return;
         self.mesh.render(shader, World.player.camera);
     }
 
@@ -55,6 +68,9 @@ pub const Chunk = struct {
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator) !void {
         try self.buildBlocks(allocator);
+    }
+
+    pub fn finalize(self: *Self, allocator: std.mem.Allocator) !void {
         try self.createMeshData(allocator);
     }
 
@@ -114,21 +130,54 @@ pub const Chunk = struct {
                 var z: u8 = 0;
                 while (z < self.blocks[x][y].len) : (z += 1) {
                     if (self.blocks[x][y][z].type != @intFromEnum(block.Blocks.AIR)) {
-                        try self.addToChunk(Vec3{ .x = @floatFromInt(x), .y = @floatFromInt(y), .z = @floatFromInt(z) }, self.blocks[x][y][z], allocator);
+                        try self.addToChunk(@intCast(x), @intCast(y), @intCast(z), self.blocks[x][y][z], allocator);
                     }
                 }
             }
         }
     }
 
-    fn addToChunk(self: *Self, pos: Vec3, voxel: block.Block, allocator: std.mem.Allocator) !void {
-        var tempPos: Vec3 = .{};
+    fn checkSolid(self: Self, x: i32, y: i32, z: i32) bool {
+        if (y < 0 or y >= constants.CHUNK_HEIGHT) return false;
+
+        if (x < 0) {
+            const np = self.neighbor_ptrs[0] orelse return false;
+            return np.blocks[constants.CHUNK_WIDTH - 1][@intCast(y)][@intCast(z)].type != @intFromEnum(block.Blocks.AIR);
+        }
+        if (x >= constants.CHUNK_WIDTH) {
+            const np = self.neighbor_ptrs[1] orelse return false;
+            return np.blocks[0][@intCast(y)][@intCast(z)].type != @intFromEnum(block.Blocks.AIR);
+        }
+        if (z < 0) {
+            const np = self.neighbor_ptrs[2] orelse return false;
+            return np.blocks[@intCast(x)][@intCast(y)][constants.CHUNK_WIDTH - 1].type != @intFromEnum(block.Blocks.AIR);
+        }
+        if (z >= constants.CHUNK_WIDTH) {
+            const np = self.neighbor_ptrs[3] orelse return false;
+            return np.blocks[@intCast(x)][@intCast(y)][0].type != @intFromEnum(block.Blocks.AIR);
+        }
+
+        return self.blocks[@intCast(x)][@intCast(y)][@intCast(z)].type != @intFromEnum(block.Blocks.AIR);
+    }
+
+    fn addToChunk(self: *Self, x: i32, y: i32, z: i32, voxel: block.Block, allocator: std.mem.Allocator) !void {
+        const fx: f32 = @floatFromInt(x);
+        const fy: f32 = @floatFromInt(y);
+        const fz: f32 = @floatFromInt(z);
+        const pos = Vec3{ .x = fx, .y = fy, .z = fz };
+
+        const neighbors_solid = [6]bool{
+            self.checkSolid(x, y, z - 1),
+            self.checkSolid(x, y, z + 1),
+            self.checkSolid(x, y + 1, z),
+            self.checkSolid(x, y - 1, z),
+            self.checkSolid(x - 1, y, z),
+            self.checkSolid(x + 1, y, z),
+        };
+
         var i: u8 = 0;
         while (i < 6) : (i += 1) {
-            _ = tempPos.set(pos);
-            tempPos = tempPos.add(constants.FACE_CHECKS[i]);
-
-            if (!self.checkVoxel(tempPos)) {
+            if (!neighbors_solid[i]) {
                 const tile_uv = computeTileUv(voxel.type, i);
                 const color = constants.BLOCK_TYPES[voxel.type].colors[i];
                 try self.vertices.appendSlice(allocator, &[4]mesh.Vertex {
@@ -170,6 +219,7 @@ pub const Chunk = struct {
         self.mesh = try mesh.Mesh.create(allocator, self.vertices.items, self.indices.items);
         self.mesh.transform.pos.x = @as(f32, @floatFromInt(self.coord.x * constants.CHUNK_WIDTH));
         self.mesh.transform.pos.z = @as(f32, @floatFromInt(self.coord.z * constants.CHUNK_WIDTH));
+        self.generated = true;
     }
 
 };

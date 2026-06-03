@@ -7,11 +7,13 @@ const glfw = @import("zglfw");
 const gl = @import("zgl");
 
 pub fn main(init: std.process.Init) !void {
-    const io = init.io;
-
     var da: std.heap.DebugAllocator(.{}) = .init;
     defer _ = da.deinit();
     const gpa = da.allocator();
+
+    const io = init.io;
+    voxel.Profiler.init(&io);
+    defer voxel.Profiler.destroy(gpa);
 
     try glfw.init();
     defer glfw.terminate();
@@ -31,21 +33,17 @@ pub fn main(init: std.process.Init) !void {
 
     gl.enable(.depth_test);
 
-    var profiler = voxel.Profiler{};
-
-    profiler.start(io);
+    voxel.Profiler.start();
     try voxel.World.create(gpa, io);
     defer voxel.World.destroy(gpa);
-    try voxel.World.generate(gpa);
-    const worldLoadTime = profiler.end(io);
-    std.debug.print("World took {} seconds to generate.", .{worldLoadTime});
+    _ = voxel.Profiler.end();
 
     while (!window.shouldClose()) {
         voxel.Time.startFrame(io);
         gl.clearColor(0.53, 0.81, 0.92, 1.0);
         gl.clear(.{ .color = true, .depth = true });
 
-        voxel.World.update();
+        try voxel.World.update(gpa);
 
         window.swapBuffers();
         glfw.pollEvents();
