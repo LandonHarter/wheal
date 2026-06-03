@@ -54,7 +54,7 @@ pub const Chunk = struct {
     }
 
     pub fn generate(self: *Self, allocator: std.mem.Allocator) !void {
-        try self.populate(allocator);
+        try self.buildBlocks(allocator);
         try self.createMeshData(allocator);
     }
 
@@ -72,7 +72,7 @@ pub const Chunk = struct {
         const y = @as(usize, @intFromFloat(pos.y));
         const z = @as(usize, @intFromFloat(pos.z));
 
-        return self.blocks[x][y][z].type != 0;
+        return self.blocks[x][y][z].type != @intFromEnum(block.Blocks.AIR);
     }
 
     pub fn inChunk(pos: Vec3) bool {
@@ -93,7 +93,7 @@ pub const Chunk = struct {
         };
     }
 
-    fn populate(self: *Self, allocator: std.mem.Allocator) !void {
+    pub fn populate(self: *Self) void {
         var x: u8 = 0;
         while (x < self.blocks.len) : (x += 1) {
             var y: u8 = 0;
@@ -101,6 +101,18 @@ pub const Chunk = struct {
                 var z: u8 = 0;
                 while (z < self.blocks[x][y].len) : (z += 1) {
                     self.blocks[x][y][z].type = @intFromEnum(if (y > 32) block.Blocks.AIR else block.Blocks.GRASS);
+                }
+            }
+        }
+    }
+
+    fn buildBlocks(self: *Self, allocator: std.mem.Allocator) !void {
+        var x: u8 = 0;
+        while (x < self.blocks.len) : (x += 1) {
+            var y: u8 = 0;
+            while (y < self.blocks[x].len) : (y += 1) {
+                var z: u8 = 0;
+                while (z < self.blocks[x][y].len) : (z += 1) {
                     if (self.blocks[x][y][z].type != @intFromEnum(block.Blocks.AIR)) {
                         try self.addToChunk(Vec3{ .x = @floatFromInt(x), .y = @floatFromInt(y), .z = @floatFromInt(z) }, self.blocks[x][y][z], allocator);
                     }
@@ -118,11 +130,12 @@ pub const Chunk = struct {
 
             if (!self.checkVoxel(tempPos)) {
                 const tile_uv = computeTileUv(voxel.type, i);
+                const color = constants.BLOCK_TYPES[voxel.type].colors[i];
                 try self.vertices.appendSlice(allocator, &[4]mesh.Vertex {
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][0]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v1 } },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][1]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v0 } },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][2]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v1 } },
-                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][3]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v0 } },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][0]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v1 }, .color = color },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][1]]), .uv = .{ .x = tile_uv.u0, .y = tile_uv.v0 }, .color = color },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][2]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v1 }, .color = color },
+                    mesh.Vertex{ .pos = pos.clone().add(constants.BLOCK_VERTICES[constants.BLOCK_INDICES[i][3]]), .uv = .{ .x = tile_uv.u1, .y = tile_uv.v0 }, .color = color },
                 });
                 try self.indices.appendSlice(allocator, &[6]u32 {
                     self.vertexIndex,

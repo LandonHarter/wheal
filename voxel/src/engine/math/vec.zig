@@ -28,6 +28,14 @@ pub const Vec3 = struct {
         };
     }
 
+    pub fn col(self: Self) Vec3 {
+        return Vec3 {
+            .x = self.x / 255,
+            .y = self.y / 255,
+            .z = self.z / 255,
+        };
+    }
+
 };
 
 pub const Vec2 = struct {

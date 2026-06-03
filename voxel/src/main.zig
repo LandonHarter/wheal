@@ -26,13 +26,19 @@ pub fn main(init: std.process.Init) !void {
 
     glfw.makeContextCurrent(window);
     glfw.swapInterval(1);
+    try voxel.Input.init(window);
     gl.loadExtensions({}, getProcAddress) catch {}; // macOS caps at GL 4.1; 4.3+ entry points are absent
 
     gl.enable(.depth_test);
 
+    var profiler = voxel.Profiler{};
+
+    profiler.start(io);
     try voxel.World.create(gpa, io);
     defer voxel.World.destroy(gpa);
     try voxel.World.generate(gpa);
+    const worldLoadTime = profiler.end(io);
+    std.debug.print("World took {} seconds to generate.", .{worldLoadTime});
 
     while (!window.shouldClose()) {
         voxel.Time.startFrame(io);

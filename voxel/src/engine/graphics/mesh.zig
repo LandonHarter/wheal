@@ -12,6 +12,7 @@ const Camera = @import("../camera.zig").Camera;
 pub const Vertex = struct {
     pos: Vec3 = Vec3{},
     uv: Vec2 = Vec2{},
+    color: Vec3 = Vec3{.x=1,.y=1,.z=1}
 };
 
 pub const Mesh = struct {
@@ -20,6 +21,8 @@ pub const Mesh = struct {
     vao: gl.VertexArray,
     vbo: gl.Buffer,
     ibo: gl.Buffer,
+    ubo: gl.Buffer,
+    cbo: gl.Buffer,
     count: usize,
 
     transform: Transform = Transform{},
@@ -38,6 +41,14 @@ pub const Mesh = struct {
         for (vertices, 0..) |vertex, index| {
             uvBuffer[index * 2] = vertex.uv.x;
             uvBuffer[index * 2 + 1] = vertex.uv.y;
+        }
+
+        const colorBuffer = try allocator.alloc(f32, vertices.len * 3);
+        defer allocator.free(colorBuffer);
+        for (vertices, 0..) |vertex, index| {
+            colorBuffer[index * 3] = vertex.color.x;
+            colorBuffer[index * 3 + 1] = vertex.color.y;
+            colorBuffer[index * 3 + 2] = vertex.color.z;
         }
 
         const vao = gl.genVertexArray();
@@ -63,15 +74,26 @@ pub const Mesh = struct {
         gl.vertexAttribPointer(1, 2, gl.Type.float, false, 2 * @sizeOf(f32), 0);
         gl.enableVertexAttribArray(1);
 
+        const cbo = gl.genBuffer();
+        cbo.bind(gl.BufferTarget.array_buffer);
+        gl.bufferData(gl.BufferTarget.array_buffer, f32, colorBuffer, gl.BufferUsage.static_draw);
+
+        gl.vertexAttribPointer(2, 3, gl.Type.float, false, 3 * @sizeOf(f32), 0);
+        gl.enableVertexAttribArray(2);
+
         return Mesh{
             .vao = vao,
             .vbo = vbo,
             .ibo = ibo,
+            .ubo = ubo,
+            .cbo = cbo,
             .count = indices.len,
         };
     }
 
     pub fn destroy(self: Self) void {
+        self.cbo.delete();
+        self.ubo.delete();
         self.ibo.delete();
         self.vbo.delete();
         self.vao.delete();
@@ -82,6 +104,8 @@ pub const Mesh = struct {
 
         self.vao.bind();
         gl.enableVertexAttribArray(0);
+        gl.enableVertexAttribArray(1);
+        gl.enableVertexAttribArray(2);
 
         gl.bindBuffer(self.ibo, .element_array_buffer);
 
@@ -95,6 +119,8 @@ pub const Mesh = struct {
 
         gl.drawElements(.triangles, self.count, .unsigned_int, 0);
 
+        gl.disableVertexAttribArray(2);
+        gl.disableVertexAttribArray(1);
         gl.disableVertexAttribArray(0);
     }
 };

@@ -46,6 +46,14 @@ pub const BLOCK_TYPES = [_]BlockType {
     },
     BlockType{
         .name = "Grass",
-        .textures = [6]u16{2,2,3,1,2,2}, 
+        .textures = [6]u16{2,2,3,1,2,2},
+        .colors = [6]Vec3{
+            Vec3{.x=1,.y=1,.z=1},
+            Vec3{.x=1,.y=1,.z=1},
+            (Vec3{.x=145,.y=189,.z=89}).col(),
+            Vec3{.x=1,.y=1,.z=1},
+            Vec3{.x=1,.y=1,.z=1},
+            Vec3{.x=1,.y=1,.z=1},
+        },
     },
 };

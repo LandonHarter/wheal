@@ -6,6 +6,8 @@ const Vec3 = @import("../engine/math/vec.zig").Vec3;
 const Shader = @import("../engine/graphics/shader.zig").Shader;
 const atlas_mod = @import("../engine/graphics/atlas.zig");
 const constants = @import("constants.zig");
+const Time = @import("../engine/core/time.zig");
+const Input = @import("../engine/core/input.zig");
 
 const WORLD_SIZE = 5;
 var chunks: std.hash_map.AutoHashMap(chunk.ChunkCoord, chunk.Chunk) = undefined;
@@ -26,8 +28,8 @@ pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
     player.camera.transform.pos.z = 10;
 
     var x: u8 = 0;
-    var z: u8 = 0;
     while (x <= WORLD_SIZE) : (x += 1) {
+        var z: u8 = 0;
         while (z <= WORLD_SIZE) : (z += 1) {
             const coord = chunk.ChunkCoord{ .x=x, .z=z };
             try chunks.put(coord, chunk.Chunk.create(coord));
@@ -38,11 +40,19 @@ pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
 pub fn generate(allocator: std.mem.Allocator) !void {
     var it = chunks.valueIterator();
     while (it.next()) |chunk_ptr| {
+        chunk_ptr.*.populate();
+    }
+
+    it = chunks.valueIterator();
+    while (it.next()) |chunk_ptr| {
         try chunk_ptr.*.generate(allocator);
     }
 }
 
 pub fn update() void {
+    Input.update();
+    player.update(@floatCast(Time.delta));
+
     gl.activeTexture(.texture_0);
     gl.bindTexture(atlas.texture, .@"2d");
 
