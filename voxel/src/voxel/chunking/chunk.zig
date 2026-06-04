@@ -6,6 +6,7 @@ const Vec3 = vec.Vec3;
 const Vec2 = vec.Vec2;
 const Shader = @import("../../engine/graphics/shader.zig").Shader;
 const Profiler = @import("../../engine/performance.zig");
+const Noise = @import("../noise.zig");
 
 const block = @import("../blocks/block.zig");
 const World = @import("../world.zig");
@@ -74,6 +75,18 @@ pub const Chunk = struct {
         try self.createMeshData(allocator);
     }
 
+    pub fn rebuildBlocks(self: *Self, allocator: std.mem.Allocator) !void {
+        self.vertices.clearRetainingCapacity();
+        self.indices.clearRetainingCapacity();
+        self.vertexIndex = 0;
+        try self.buildBlocks(allocator);
+    }
+
+    pub fn refinalize(self: *Self, allocator: std.mem.Allocator) !void {
+        if (self.generated) self.mesh.destroy();
+        try self.createMeshData(allocator);
+    }
+
     pub fn checkVoxel(self: Self, pos: Vec3) bool {
         if (!inChunk(pos)) {
             const world_pos = Vec3{
@@ -109,14 +122,37 @@ pub const Chunk = struct {
         };
     }
 
-    pub fn populate(self: *Self) void {
+    pub fn populate(self: *Self, noise: *Noise.PerlinGenerator) void {
         var x: u8 = 0;
         while (x < self.blocks.len) : (x += 1) {
-            var y: u8 = 0;
-            while (y < self.blocks[x].len) : (y += 1) {
-                var z: u8 = 0;
-                while (z < self.blocks[x][y].len) : (z += 1) {
-                    self.blocks[x][y][z].type = @intFromEnum(if (y > 32) block.Blocks.AIR else block.Blocks.GRASS);
+            var z: u8 = 0;
+            while (z < self.blocks[x][0].len) : (z += 1) {
+                const worldX = self.coord.x * constants.CHUNK_WIDTH + x;
+                const worldZ = self.coord.z * constants.CHUNK_WIDTH + z;
+
+                const heightVal = noise.get(
+                    @as(f64, @floatFromInt(worldX)) * constants.NOISE_SCALE,
+                    0,
+                    @as(f64, @floatFromInt(worldZ)) * constants.NOISE_SCALE,
+                ) * constants.NOISE_AMPLITUDE + constants.NOISE_BASE;
+                const topY: i32 = @intFromFloat(@floor(heightVal));
+                const dirtDepth: i32 = 4;
+
+                var y: u8 = 0;
+                while (y < self.blocks[x].len) : (y += 1) {
+                    const yi: i32 = @intCast(y);
+                    if (yi > topY) break;
+
+                    const block_type: block.Blocks = if (y == 0)
+                        .BEDROCK
+                    else if (yi == topY)
+                        .GRASS
+                    else if (yi >= topY - dirtDepth)
+                        .DIRT
+                    else
+                        .STONE;
+
+                    self.blocks[x][y][z].type = @intFromEnum(block_type);
                 }
             }
         }

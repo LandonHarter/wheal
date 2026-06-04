@@ -4,7 +4,11 @@ const BlockType = @import("blocks/block-type.zig").BlockType;
 pub const CHUNK_WIDTH = 16;
 pub const CHUNK_HEIGHT = 128;
 
-pub const VIEW_DISTANCE = 4;
+pub const VIEW_DISTANCE = 8;
+
+pub const NOISE_SCALE: f64 = 0.015;
+pub const NOISE_AMPLITUDE: f64 = 24;
+pub const NOISE_BASE: f64 = 16;
 
 pub const TEXTURE_ATLAS_SIZE = 32;
 
@@ -57,5 +61,13 @@ pub const BLOCK_TYPES = [_]BlockType {
             Vec3{.x=1,.y=1,.z=1},
             Vec3{.x=1,.y=1,.z=1},
         },
+    },
+    BlockType{
+        .name = "Stone",
+        .textures = [1]u16{5} ** 6,
+    },
+    BlockType{
+        .name = "Bedrock",
+        .textures = [1]u16{6} ** 6,
     },
 };

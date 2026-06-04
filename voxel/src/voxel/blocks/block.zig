@@ -1,7 +1,9 @@
 pub const Blocks = enum(u8) {
     AIR,
     DIRT,
-    GRASS
+    GRASS,
+    STONE,
+    BEDROCK,
 };
 
 pub const Block = struct {
