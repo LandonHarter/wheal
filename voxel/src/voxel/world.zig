@@ -43,7 +43,7 @@ pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
 
 pub fn update(gpa: std.mem.Allocator) !void {
     Input.update();
-    player.update(@floatCast(Time.delta));
+    try player.update(@floatCast(Time.delta), gpa);
 
     gl.activeTexture(.texture_0);
     gl.bindTexture(atlas.texture, .@"2d");
@@ -85,6 +85,41 @@ pub fn checkVoxel(pos: Vec3) bool {
         .z = pos.z - @as(f32, @floatFromInt(cz * constants.CHUNK_WIDTH)),
     };
     return c.checkVoxel(local);
+}
+
+pub fn setVoxel(pos: Vec3, blockType: u8, gpa: std.mem.Allocator) !void {
+    if (pos.y < 0 or pos.y >= constants.CHUNK_HEIGHT) return;
+
+    const cx = @as(i32, @intFromFloat(@floor(pos.x / constants.CHUNK_WIDTH)));
+    const cz = @as(i32, @intFromFloat(@floor(pos.z / constants.CHUNK_WIDTH)));
+    const coord = chunk.ChunkCoord{ .x = cx, .z = cz };
+    const c = chunks.getPtr(coord) orelse return;
+
+    const local = Vec3{
+        .x = pos.x - @as(f32, @floatFromInt(cx * constants.CHUNK_WIDTH)),
+        .y = pos.y,
+        .z = pos.z - @as(f32, @floatFromInt(cz * constants.CHUNK_WIDTH)),
+    };
+    c.setVoxel(local, blockType);
+
+    try c.rebuildBlocks(gpa);
+    try c.refinalize(gpa);
+
+    const lx = @as(i32, @intFromFloat(local.x));
+    const lz = @as(i32, @intFromFloat(local.z));
+    const edges = [_]struct { hit: bool, ncoord: chunk.ChunkCoord }{
+        .{ .hit = lx == 0,                              .ncoord = .{ .x = cx - 1, .z = cz } },
+        .{ .hit = lx == constants.CHUNK_WIDTH - 1,      .ncoord = .{ .x = cx + 1, .z = cz } },
+        .{ .hit = lz == 0,                              .ncoord = .{ .x = cx, .z = cz - 1 } },
+        .{ .hit = lz == constants.CHUNK_WIDTH - 1,      .ncoord = .{ .x = cx, .z = cz + 1 } },
+    };
+    for (edges) |e| {
+        if (!e.hit) continue;
+        const np = chunks.getPtr(e.ncoord) orelse continue;
+        if (!np.generated) continue;
+        try np.rebuildBlocks(gpa);
+        try np.refinalize(gpa);
+    }
 }
 
 fn checkViewDistance(gpa: std.mem.Allocator) !void {

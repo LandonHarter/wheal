@@ -104,6 +104,16 @@ pub const Chunk = struct {
         return self.blocks[x][y][z].type != @intFromEnum(block.Blocks.AIR);
     }
 
+    pub fn setVoxel(self: *Self, pos: Vec3, blockType: u8) void {
+        if (!inChunk(pos)) return;
+
+        const x = @as(usize, @intFromFloat(pos.x));
+        const y = @as(usize, @intFromFloat(pos.y));
+        const z = @as(usize, @intFromFloat(pos.z));
+
+        self.blocks[x][y][z] = block.Block{ .type = blockType };
+    }
+
     pub fn inChunk(pos: Vec3) bool {
         const x = @as(i32, @intFromFloat(pos.x));
         const y = @as(i32, @intFromFloat(pos.y));

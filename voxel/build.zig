@@ -19,6 +19,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    // const fontconfig = b.dependency("fontconfig", .{ .target = target, .optimize = optimize });
+    // exe.linkLibrary(fontconfig.artifact("fontconfig"));
+    //
     const zglfw = b.dependency("zglfw", .{
         .target = target,
         .optimize = optimize,

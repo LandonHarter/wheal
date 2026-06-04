@@ -39,9 +39,14 @@ pub const Player = struct {
 
     prev_fly_toggle: bool = false,
 
+    reach: u8 = 5,
+    step: f16 = 0.5,
+
     lastChunkCoord: ChunkCoord = ChunkCoord{ .x = 0, .z = 0 },
 
-    pub fn update(self: *Self, delta: f32) void {
+    prev_break: bool = false,
+
+    pub fn update(self: *Self, delta: f32, gpa: std.mem.Allocator) !void {
         self.updateLook();
 
         const fly_down = Input.isKeyDown(.f);
@@ -107,6 +112,14 @@ pub const Player = struct {
 
         const disp = self.velocity.scale(delta);
         self.moveAndCollide(disp);
+
+        const break_down = Input.isMouseDown(.left);
+        if (break_down and !self.prev_break) {
+            if (self.raycast()) |hit| {
+                try World.setVoxel(hit, 0, gpa);
+            }
+        }
+        self.prev_break = break_down;
     }
 
     fn moveAndCollide(self: *Self, disp: Vec3) void {
@@ -189,6 +202,21 @@ pub const Player = struct {
     fn damp(current: Vec3, target: Vec3, rate: f32, delta: f32) Vec3 {
         const t: f32 = 1.0 - @exp(-rate * delta);
         return current.add(target.sub(current).scale(t));
+    }
+
+    fn raycast(self: Self) ?Vec3 {
+        const origin = self.camera.transform.pos;
+        const direction = self.camera.transform.forward().normalize();
+
+        var t: f32 = 0;
+        while (t < self.reach) : (t += self.step) {
+            const point = origin.add(direction.mult(t)).floor();
+            if (World.checkVoxel(point)) {
+                return point;
+            }
+        }
+
+        return null;
     }
 
     pub fn getChunkCoord(self: Self) ChunkCoord {

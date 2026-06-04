@@ -27,7 +27,7 @@ pub fn main(init: std.process.Init) !void {
     defer window.destroy();
 
     glfw.makeContextCurrent(window);
-    glfw.swapInterval(1);
+    glfw.swapInterval(0);
     try voxel.Input.init(window);
     gl.loadExtensions({}, getProcAddress) catch {}; // macOS caps at GL 4.1; 4.3+ entry points are absent
 
@@ -37,6 +37,10 @@ pub fn main(init: std.process.Init) !void {
     try voxel.World.create(gpa, io);
     defer voxel.World.destroy(gpa);
     _ = voxel.Profiler.end();
+
+    var fps_frames: u32 = 0;
+    var fps_elapsed: f64 = 0;
+    var fps: f64 = 0;
 
     while (!window.shouldClose()) {
         voxel.Time.startFrame(io);
@@ -48,6 +52,15 @@ pub fn main(init: std.process.Init) !void {
         window.swapBuffers();
         glfw.pollEvents();
         voxel.Time.endFrame(io);
+
+        fps_frames += 1;
+        fps_elapsed += voxel.Time.delta;
+        if (fps_elapsed >= 0.5) {
+            fps = @as(f64, @floatFromInt(fps_frames)) / fps_elapsed;
+            fps_frames = 0;
+            fps_elapsed = 0;
+            std.debug.print("FPS: {d:.1}\n", .{fps});
+        }
     }
 }
 

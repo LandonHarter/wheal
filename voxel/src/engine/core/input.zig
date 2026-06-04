@@ -34,6 +34,14 @@ pub fn isKeyUp(key: glfw.Key) bool {
     return window.getKey(key) == .release;
 }
 
+pub fn isMouseDown(button: glfw.MouseButton) bool {
+    return window.getMouseButton(button) == .press;
+}
+
+pub fn isMouseUp(button: glfw.MouseButton) bool {
+    return window.getMouseButton(button) == .release;
+}
+
 pub fn mouseDx() f32 {
     return mouse_dx;
 }

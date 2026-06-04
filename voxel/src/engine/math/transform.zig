@@ -13,4 +13,13 @@ pub const Transform = struct {
         mat.translate(self.pos);
         return mat;
     }
+
+    pub fn forward(self: Self) Vec3 {
+        return Vec3 {
+            .x = -@cos(self.rot.x) * @sin(self.rot.y),
+            .y = @sin(self.rot.x),
+            .z = -@cos(self.rot.x) * @cos(self.rot.y)
+        };
+    }
+
 };

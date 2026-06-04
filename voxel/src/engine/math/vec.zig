@@ -28,6 +28,31 @@ pub const Vec3 = struct {
         };
     }
 
+    pub fn mult(self: Self, scalar: f32) Self {
+        return Vec3 {
+            .x = self.x * scalar,
+            .y = self.y * scalar,
+            .z = self.z * scalar,
+        };
+    }
+
+    pub fn floor(self: Self) Self {
+        return Vec3 {
+            .x = @floor(self.x),
+            .y = @floor(self.y),
+            .z = @floor(self.z),
+        };
+    }
+
+    pub fn normalize(self: Self) Self {
+        const n = @sqrt(self.x * self.x + self.y * self.y + self.z * self.z);
+        return Vec3 {
+            .x = self.x / n,
+            .y = self.y / n,
+            .z = self.z / n,
+        };
+    }
+
     pub fn scale(self: Self, s: f32) Self {
         return Vec3 {
             .x = self.x * s,
