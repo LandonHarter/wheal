@@ -20,6 +20,37 @@ pub const Vec3 = struct {
         };
     }
 
+    pub fn sub(self: Self, other: Vec3) Self {
+        return Vec3 {
+            .x = self.x - other.x,
+            .y = self.y - other.y,
+            .z = self.z - other.z,
+        };
+    }
+
+    pub fn scale(self: Self, s: f32) Self {
+        return Vec3 {
+            .x = self.x * s,
+            .y = self.y * s,
+            .z = self.z * s,
+        };
+    }
+
+    pub fn lengthSq(self: Self) f32 {
+        return self.x * self.x + self.y * self.y + self.z * self.z;
+    }
+
+    pub fn length(self: Self) f32 {
+        return @sqrt(self.lengthSq());
+    }
+
+    pub fn normalized(self: Self) Vec3 {
+        const l2 = self.lengthSq();
+        if (l2 == 0) return Vec3{};
+        const inv = 1.0 / @sqrt(l2);
+        return Vec3 { .x = self.x * inv, .y = self.y * inv, .z = self.z * inv };
+    }
+
     pub fn clone(self: Self) Vec3 {
         return Vec3 {
             .x = self.x,
@@ -34,6 +65,19 @@ pub const Vec3 = struct {
             .y = self.y / 255,
             .z = self.z / 255,
         };
+    }
+
+    pub fn clamp(self: *Self, max: Vec3) *Self {
+        if (self.x < -max.x) { self.x = -max.x; }
+        else if (self.x > max.x) { self.x = max.x; }
+ 
+        if (self.y < -max.y) { self.y = -max.y; }
+        else if (self.y > max.y) { self.y = max.y; }
+
+        if (self.z < -max.z) { self.z = -max.z; }
+        else if (self.z > max.z) { self.z = max.z; }
+
+        return self;
     }
 
 };

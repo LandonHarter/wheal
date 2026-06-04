@@ -23,7 +23,7 @@ var atlas: atlas_mod.AtlasResult = undefined;
 pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
     chunks = .init(gpa);
 
-    shader = try Shader.load("resources/shaders/vert.glsl", "resources/shaders/frag.glsl", io, gpa);
+    shader = try Shader.load("resources/shaders/chunk/vert.glsl", "resources/shaders/chunk/frag.glsl", io, gpa);
     try Profiler.event("chunk_shader_load", gpa);
 
     atlas = try atlas_mod.build(gpa, io, "resources/default.zip", "resources/atlas-blocks.txt");
