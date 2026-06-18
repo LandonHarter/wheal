@@ -10,6 +10,8 @@ pub const Camera = struct {
     aspect: f32 = 16.0 / 9.0,
     near: f32 = 0.1,
     far: f32 = 1000.0,
+    width: f32 = 800,
+    height: f32 = 600,
 
     pub fn view(self: Self) Mat4 {
         const pitch = self.transform.rot.x;
@@ -61,6 +63,17 @@ pub const Camera = struct {
                 .{ 0, f, 0, 0 },
                 .{ 0, 0, (self.far + self.near) * nf, 2.0 * self.far * self.near * nf },
                 .{ 0, 0, -1, 0 },
+            },
+        };
+    }
+
+    pub fn ortho(self: Self) Mat4 {
+        return Mat4{
+            .data = .{
+                .{ 2.0 / self.width, 0, 0, 0 },
+                .{ 0, 2.0 / self.height, 0, 0 },
+                .{ 0, 0, -1, 0 },
+                .{ 0, 0, 0, 1 },
             },
         };
     }

@@ -123,4 +123,32 @@ pub const Mesh = struct {
         gl.disableVertexAttribArray(1);
         gl.disableVertexAttribArray(0);
     }
+
+    pub fn render2d(self: Self, shader: Shader, camera: Camera) void {
+        gl.disable(.depth_test);
+        gl.disable(.cull_face);
+
+        shader.bind();
+
+        self.vao.bind();
+        gl.enableVertexAttribArray(0);
+        gl.enableVertexAttribArray(1);
+
+        gl.bindBuffer(self.ibo, .element_array_buffer);
+
+        const modelArr = [1][4][4]f32{self.transform.model().data};
+        const projArr = [1][4][4]f32{camera.ortho().data};
+
+        shader.program.uniformMatrix4(shader.uniloc("model"), true, &modelArr);
+        shader.program.uniformMatrix4(shader.uniloc("projection"), true, &projArr);
+
+        gl.drawElements(.triangles, self.count, .unsigned_int, 0);
+
+        gl.disableVertexAttribArray(1);
+        gl.disableVertexAttribArray(0);
+
+        gl.enable(.depth_test);
+        gl.enable(.cull_face);
+    }
+
 };

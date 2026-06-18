@@ -10,6 +10,7 @@ const constants = @import("constants.zig");
 const Time = @import("../engine/core/time.zig");
 const Input = @import("../engine/core/input.zig");
 const Noise = @import("noise.zig");
+const Crosshair = @import("player/crosshair.zig");
 
 var chunks: std.hash_map.AutoHashMap(chunk.ChunkCoord, chunk.Chunk) = undefined;
 var activeChunks: std.AutoHashMapUnmanaged(chunk.ChunkCoord, void) = .empty;
@@ -35,6 +36,7 @@ pub fn create(gpa: std.mem.Allocator, io: std.Io) !void {
     noise.falloff = 0.5;
     noise.octaves = 4;
 
+    try player.init(gpa, io);
     player.camera.transform.pos.y = 35;
     player.camera.transform.pos.z = 10;
 
@@ -53,6 +55,8 @@ pub fn update(gpa: std.mem.Allocator) !void {
         try chunk_ptr.*.update(shader);
     }
 
+    Crosshair.render(player.camera);
+
     const currentCoord = player.getChunkCoord();
     if (!currentCoord.equals(player.lastChunkCoord)) {
         try checkViewDistance(gpa);
@@ -61,6 +65,8 @@ pub fn update(gpa: std.mem.Allocator) !void {
 }
 
 pub fn destroy(allocator: std.mem.Allocator) void {
+    player.destroy();
+
     var it = chunks.valueIterator();
     while (it.next()) |chunk_ptr| {
         chunk_ptr.*.destroy(allocator);

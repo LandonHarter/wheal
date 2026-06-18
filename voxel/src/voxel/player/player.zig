@@ -4,6 +4,8 @@ const Vec3 = @import("../../engine/math/vec.zig").Vec3;
 const ChunkCoord = @import("../chunking/chunk.zig").ChunkCoord;
 const Input = @import("../../engine/core/input.zig");
 const World = @import("../world.zig");
+const Mesh = @import("../../engine/graphics/mesh.zig").Mesh;
+const Crosshair = @import("crosshair.zig");
 const constants = @import("../constants.zig");
 const glfw = @import("zglfw");
 
@@ -45,6 +47,16 @@ pub const Player = struct {
     lastChunkCoord: ChunkCoord = ChunkCoord{ .x = 0, .z = 0 },
 
     prev_break: bool = false,
+
+    pub fn init(self: Self, gpa: std.mem.Allocator, io: std.Io) !void {
+        _ = self;
+        try Crosshair.create(gpa, io);
+    }
+
+    pub fn destroy(self: Self) void {
+        _ = self;
+        Crosshair.destroy();
+    }
 
     pub fn update(self: *Self, delta: f32, gpa: std.mem.Allocator) !void {
         self.updateLook();
